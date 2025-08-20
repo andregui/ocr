@@ -1,15 +1,11 @@
-# Use Ubuntu as base image for better compatibility
-FROM ubuntu:24.04
+# Use Python slim image as base
+FROM python:3.12-slim
 
-# Avoid timezone prompts during package installation
-ENV DEBIAN_FRONTEND=noninteractive
+# Set timezone
 ENV TZ=America/Sao_Paulo
 
 # Install system dependencies for OpenCV, Tesseract, and image processing
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-venv \
     tesseract-ocr \
     tesseract-ocr-por \
     libgl1 \
@@ -19,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libgomp1 \
     libtesseract-dev \
-    libatlas-base-dev \
+    libopenblas0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory

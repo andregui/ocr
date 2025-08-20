@@ -1,9 +1,10 @@
 sudo apt update
 sudo apt install python3 -y
 sudo apt install python3-pip -y
-sudo apt-get install python3-distutils -y
+sudo apt install python3-distutils -y
 sudo apt install tesseract-ocr -y
-sudo apt-get install tesseract-ocr-por -yc
+sudo apt install tesseract-ocr-por -y
+sudo apt install podman-docker -y
 sudo apt install python3-venv -y
 if [ ! -d ".venv" ]; then
     mkdir .venv
