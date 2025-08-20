@@ -1,0 +1,31 @@
+# Arquivos e diretórios a serem ignorados pelo Docker
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.env
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
+
+# Arquivos de resultado (serão gerados no container)
+ocr_results.csv
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
