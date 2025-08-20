@@ -1,96 +1,110 @@
-# OCR Script - Docker
+# OCR Script para Comprovantes PIX
 
-Este projeto contém um script Python para extrair texto de imagens usando OCR (Optical Character Recognition) com suporte a Docker.
+Este projeto contém um script Python para extrair informações de comprovantes PIX usando OCR (Optical Character Recognition) com suporte a Docker.
 
 ## Características
 
-- Extrai Nome, Valor e Data de comprovantes PIX
+- Extrai automaticamente:
+  - Nome do pagador/beneficiário
+  - Valor da transação
+  - Data da transação
 - Filtra strings indesejadas como "CHARLES DA CONCEICAO"
-- Salva resultados em arquivo CSV
-- Suporte completo ao Docker
+- Salva resultados em arquivo CSV com timestamp
+- Imagem Docker otimizada (~1.12GB)
+- Suporte a português via Tesseract OCR
 
 ## Dependências
 
-O script utiliza as seguintes bibliotecas Python:
+O projeto utiliza:
+- Python 3.12
 - OpenCV (cv2)
 - NumPy
 - Pillow (PIL)
 - pytesseract
-- Tesseract OCR engine
+- Tesseract OCR engine com suporte a português
 
-## Como usar com Docker
+Todas as dependências são gerenciadas automaticamente via Docker.
+
+## Como usar
 
 ### 1. Construir a imagem Docker
 
 ```bash
-docker build -t ocr-script .
+docker build -t ocr .
 ```
 
-### 2. Executar o script
+### 2. Processar uma imagem
 
-Para processar uma imagem específica:
+Para processar um comprovante PIX:
 
 ```bash
-docker run -v $(pwd):/app/output ocr-script pix4.jpg
+docker run -v $(pwd):/app ocr pix/imagem.jpg
 ```
 
-Para processar uma imagem e salvar o CSV na pasta atual:
+Onde:
+- `$(pwd):/app`: monta o diretório atual no container
+- `imagem.jpg`: caminho para a imagem a ser processada (relativo ao diretório atual)
+
+### 3. Verificar resultados
+
+O script gera um arquivo `ocr_results.csv` no diretório atual com os resultados. Para visualizar:
 
 ```bash
-docker run -v $(pwd):/app/output ocr-script pix4.jpg
-```
-
-### 3. Verificar os resultados
-
-O arquivo `ocr_results.csv` será criado no diretório atual com os resultados do processamento.
-
-### 4. Executar de forma interativa
-
-Para entrar no container e executar múltiplos comandos:
-
-```bash
-docker run -it -v $(pwd):/app/output ocr-script bash
-```
-
-Dentro do container, você pode executar:
-
-```bash
-python ocr_script_final.py pix1.jpg
-python ocr_script_final.py pix2.jpg
 cat ocr_results.csv
 ```
 
-## Estrutura de arquivos
+## Estrutura do Projeto
 
 ```
 .
-├── Dockerfile
-├── requirements.txt
-├── .dockerignore
-├── ocr_script_final.py
-├── *.jpg (imagens para processar)
-└── ocr_results.csv (arquivo de saída)
+├── Dockerfile          # Configuração do container Docker
+├── requirements.txt    # Dependências Python
+├── ocr.py             # Script principal de OCR
+├── pix/               # Diretório com imagens de exemplo
+│   ├── pix.jpg
+│   ├── pix2.jpg
+│   └── ...
+└── ocr_results.csv    # Arquivo de saída com resultados
 ```
 
-## Formato do CSV de saída
+## Formato do CSV
 
-O arquivo CSV contém as seguintes colunas:
-- Nome: Nome extraído da imagem
-- Valor: Valor em reais
-- Data: Data da transação
-- Arquivo_Imagem: Nome do arquivo processado
-- Timestamp: Data e hora do processamento
+O arquivo de saída contém as seguintes colunas:
+- `Nome`: Nome extraído da imagem
+- `Valor`: Valor da transação (formato R$ XX,XX)
+- `Data`: Data da transação (formato DD/MM/AAAA)
+- `Arquivo_Imagem`: Nome do arquivo processado
+- `Timestamp`: Data e hora do processamento (formato YYYY-MM-DD HH:MM:SS)
 
 ## Troubleshooting
 
-Se encontrar problemas com permissões de arquivo, execute:
+### Problemas de permissão
+
+Se encontrar problemas com permissões de arquivo:
 
 ```bash
-sudo docker run -v $(pwd):/app/output ocr-script pix4.jpg
+sudo chown -R $USER:$USER ocr_results.csv
 ```
 
-Para debug, você pode executar o container e verificar os logs:
+### Ajuda do script
+
+Para ver as opções disponíveis:
 
 ```bash
-docker run -it ocr-script bash
+docker run ocr --help
 ```
+
+### Debug
+
+Para entrar no container em modo interativo:
+
+```bash
+docker run -it --entrypoint bash ocr
+```
+
+## Notas de Segurança
+
+- A imagem Docker usa uma base Python slim para minimizar a superfície de ataque
+- O container executa sem privilégios elevados
+- Os arquivos são montados somente leitura quando possível
+- Todas as dependências são instaladas de fontes oficiais
