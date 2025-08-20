@@ -8,7 +8,7 @@ Este projeto contém um script Python para extrair informações de comprovantes
   - Nome do pagador/beneficiário
   - Valor da transação
   - Data da transação
-- Filtra strings indesejadas como "CHARLES DA CONCEICAO"
+- Filtra strings indesejadas como "FULANO DE TAL"
 - Salva resultados em arquivo CSV com timestamp
 - Imagem Docker otimizada (~1.12GB)
 - Suporte a português via Tesseract OCR
