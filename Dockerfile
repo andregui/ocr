@@ -1,53 +1,48 @@
-# Use uma imagem base oficial do Python
-FROM python:3.11-slim
+# Use Ubuntu as base image for better compatibility
+FROM ubuntu:24.04
 
-# Definir o diretório de trabalho no container
-WORKDIR /app
+# Avoid timezone prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Sao_Paulo
 
-# Instalar dependências do sistema necessárias para OpenCV, Tesseract e processamento de imagem
+# Install system dependencies for OpenCV, Tesseract, and image processing
 RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
     tesseract-ocr \
     tesseract-ocr-por \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
-    libxrender-dev \
+    libxrender1 \
     libgomp1 \
-    libglib2.0-0 \
-    libgtk-3-0 \
-    libavcodec-dev \
-    libavformat-dev \
-    libswscale-dev \
-    libv4l-dev \
-    libxvidcore-dev \
-    libx264-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libtiff-dev \
+    libtesseract-dev \
     libatlas-base-dev \
-    gfortran \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar o arquivo de requirements primeiro (para aproveitar o cache do Docker)
+# Set working directory
+WORKDIR /app
+
+# Create and activate virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
-# Instalar dependências Python
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies in the virtual environment
+RUN . /opt/venv/bin/activate && pip install --no-cache-dir -r requirements.txt
 
-# Copiar o script Python e as imagens para o container
-COPY ocr_script_final.py .
-COPY *.jpg ./
+# Copy the application files
+COPY . .
 
-# Criar diretório para arquivos de saída
-RUN mkdir -p /app/output
+# Set Tesseract data path
+ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata/
 
-# Configurar variável de ambiente para o Tesseract
-ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata/
+# Command to run the script using the virtual environment's Python
+ENTRYPOINT ["/opt/venv/bin/python3", "ocr.py"]
 
-# Definir o comando padrão
-# O usuário pode passar o nome da imagem como argumento
-ENTRYPOINT ["python", "ocr_script_final.py"]
-
-# Comando padrão (pode ser sobrescrito)
+# Default help command (can be overridden)
 CMD ["--help"]
