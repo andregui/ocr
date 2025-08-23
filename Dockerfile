@@ -1,11 +1,20 @@
-# Use ubuntu image as base
-FROM ubuntu:25.04
+FROM ubuntu:24.04
 
-# Set timezone
+# Set timezone and prevent interactive prompts
 ENV TZ=America/Sao_Paulo
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies for OpenCV, Tesseract, and image processing
-RUN apt-get update && apt-get install -y \
+# Add deadsnakes PPA for Python 3.12
+RUN apt-get update && apt-get install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update
+
+# Install system dependencies, Python, and pip
+RUN apt-get install -y \
+    python3.12 \
+    python3.12-dev \
+    python3.12-venv \
+    python3-pip \
     tesseract-ocr \
     tesseract-ocr-por \
     libgl1 \
@@ -13,32 +22,30 @@ RUN apt-get update && apt-get install -y \
     libsm6 \
     libxext6 \
     libxrender1 \
-    libgomp1 \
-    libtesseract-dev \
-    libopenblas0 \
     && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment and upgrade pip
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3.12 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Upgrade pip in virtual environment
+RUN pip install --upgrade pip
 
 # Set working directory
 WORKDIR /app
 
-# Create and activate virtual environment
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
-# Install Python dependencies in the virtual environment
-RUN . /opt/venv/bin/activate && pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application files
 COPY . .
 
-# Set Tesseract data path
-ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata/
-
-# Command to run the script using the virtual environment's Python
-ENTRYPOINT ["/opt/venv/bin/python3", "ocr.py"]
+# Set the entry point
+ENTRYPOINT ["python", "ocr.py"]
 
 # Default help command (can be overridden)
 CMD ["--help"]
