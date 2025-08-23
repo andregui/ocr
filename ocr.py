@@ -164,8 +164,15 @@ def extract_name_value_and_date(text):
     """
     result = {}
     
+    # Função auxiliar para formatar ano de 2 dígitos
+    def format_year(year):
+        if len(year) == 2:
+            year = '20' + year
+        return year
+    
     # Padrões mais flexíveis para capturar nomes completos
     name_patterns = [
+        r'Enviado de\s*\n*\s*([A-Z][A-Z\s]+(?:\s+[A-Z][a-z]+)*)',  # "Enviado de SAMUEL GERVASIO FONTES"
         r'(?:Pagador|pagador)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+de\s+[A-Z][a-z]+)?)',  # "Pagador Rafael Brasil de Aguiar"
         r'Pagador\s*\n\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+de\s+[A-Z][a-z]+)?)',        # "Pagador" em linha separada
         r'(?:nome|Nome)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+da\s+[A-Z][a-z]+)?)',       # "nome Matheus Benavenuto da Silva"
@@ -184,7 +191,7 @@ def extract_name_value_and_date(text):
             name = re.sub(r'\s*(CPF|cnpj|agencia|conta|tipo).*', '', name, flags=re.IGNORECASE)  # Remove CPF e outras palavras
             name = re.sub(r'[^A-Za-z\s]', '', name).strip()  # Remove caracteres especiais
             # Verifica se não contém a string indesejada específica e tem tamanho adequado
-            if (not re.search(r'CHARLES DA CONCEICAO|INSTITUI|CPF|PIX|BANCO|TRANSFERENCIA|ITAU|UNIBANCO|CORA|SCF|PAGAMENTOS', name, re.IGNORECASE) 
+            if (not re.search(r'IGREJA BATISTA EM CAVALEIROS|INSTITUI|CPF|PIX|BANCO|TRANSFERENCIA|ITAU|UNIBANCO|CORA|SCF|PAGAMENTOS', name, re.IGNORECASE) 
                 and len(name) > 5 and len(name.split()) >= 2):
                 result['Nome'] = name
                 break
@@ -212,12 +219,12 @@ def extract_name_value_and_date(text):
     
     # Padrões para extrair data - incluindo formatos com OCR imperfeito
     date_patterns = [
+        r'(\d{1,2})/(\d{2})/(\d{2})(?:\s+às|\s+as)',  # "20/02/25 às" ou "20/02/25 as"
         r'(\d{1,2})\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\s+de\s+(\d{4})',  # "21 jul de 2025"
         r'(\d{1,2}|\?\?|\?)\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(\d{4})',  # "2? JUL 2025"
         r'(\d{1,2})/(\d{1,2})/(\d{4})',                   # "21/07/2025"
         r'(\d{1,2})-(\d{1,2})-(\d{4})',                   # "21-07-2025"
         r'(\d{4})-(\d{1,2})-(\d{1,2})',                   # "2025-07-21"
-        r'(\d{1,2}|\?\?|\?)\s+(JUL|JAN|FEV|MAR|ABR|MAI|JUN|AGO|SET|OUT|NOV|DEZ)\s+(\d{4})\s*-', # Com traço no final
     ]
     
     # Mapeamento de meses abreviados para números
@@ -230,7 +237,13 @@ def extract_name_value_and_date(text):
     for i, pattern in enumerate(date_patterns):
         date_match = re.search(pattern, text, re.IGNORECASE)
         if date_match:
-            if i in [0, 1, 5]:  # Formatos com nome do mês
+            if i == 0:  # Formato com ano de 2 dígitos
+                day = date_match.group(1).zfill(2)
+                month = date_match.group(2).zfill(2)
+                year = format_year(date_match.group(3))
+                result['Data'] = f"{day}/{month}/{year}"
+                break
+            elif i in [1, 2]:  # Formatos com nome do mês
                 day_raw = date_match.group(1)
                 if '?' in day_raw or day_raw in ['2?', '?', '??']:
                     day = '21'
@@ -240,17 +253,19 @@ def extract_name_value_and_date(text):
                 year = date_match.group(3)
                 month = month_map.get(month_name, '07')
                 result['Data'] = f"{day}/{month}/{year}"
-            elif i in [2, 3]:  # Formatos numéricos
+                break
+            elif i in [3, 4]:  # Formatos numéricos
                 day = date_match.group(1).zfill(2)
                 month = date_match.group(2).zfill(2)
                 year = date_match.group(3)
                 result['Data'] = f"{day}/{month}/{year}"
-            elif i == 4:  # Formato ISO
+                break
+            elif i == 5:  # Formato ISO
                 year = date_match.group(1)
                 month = date_match.group(2).zfill(2)
                 day = date_match.group(3).zfill(2)
                 result['Data'] = f"{day}/{month}/{year}"
-            break
+                break
     
     return result
 
@@ -328,6 +343,11 @@ def main():
     if not text.strip():
         print("Erro: Não foi possível extrair texto da imagem.")
         sys.exit(1)
+    
+    print("\nTexto extraído:")
+    print("-" * 50)
+    print(text)
+    print("-" * 50)
     
     # Extrai nome, valor e data
     result = extract_name_value_and_date(text)

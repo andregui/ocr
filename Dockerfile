@@ -1,5 +1,5 @@
-# Use Python slim image as base
-FROM python:3.12-slim
+# Use ubuntu image as base
+FROM ubuntu:25.04
 
 # Set timezone
 ENV TZ=America/Sao_Paulo
