@@ -172,17 +172,18 @@ def extract_name_value_and_date(text):
     
     # Padrões mais flexíveis para capturar nomes completos
     name_patterns = [
-        r'CLIENTE:\s*([A-Z][A-Z\s]+\s+[A-Z]\s*;?\s*[A-Z][A-Z\s]+)',  # "CLIENTE: ERIVALDO S; MASCARENHAS"
+        r'\nde\n([A-Z][A-Z\s]+(?:\s+[A-Z][A-Z\s]+)*)', 
+        r'CLIENTE:\s*([A-Z][A-Z\s]+\s+[A-Z]\s*;?\s*[A-Z][A-Z\s]+)', 
         r'de\s*\n*\s*(BERCARIO CRECHE ESCOLA ALMEID\.\.\.)',  # Padrão específico para o caso solicitado
         r'de\s*\n*\s*([A-Z][A-Z\s]+(?:\.\.\.|(?:\s+[A-Z][a-z]+)*))',  # Nome após "de" com ...
-        r'Enviado de\s*\n*\s*([A-Z][A-Z\s]+(?:\s+[A-Z][a-z]+)*)',  # "Enviado de SAMUEL GERVASIO FONTES"
-        r'(?:Pagador|pagador)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+de\s+[A-Z][a-z]+)?)',  # "Pagador Rafael Brasil de Aguiar"
+        r'Enviado de\s*\n*\s*([A-Z][A-Z\s]+(?:\s+[A-Z][a-z]+)*)',
+        r'(?:Pagador|pagador)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+de\s+[A-Z][a-z]+)?)', 
         r'Pagador\s*\n\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+de\s+[A-Z][a-z]+)?)',        # "Pagador" em linha separada
-        r'(?:nome|Nome)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+da\s+[A-Z][a-z]+)?)',       # "nome Matheus Benavenuto da Silva"
+        r'(?:nome|Nome)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+da\s+[A-Z][a-z]+)?)',       
         r'(?:nome|Nome)\s+([A-Z]+\s+[A-Z]+\s+[A-Z]+(?:\s+[A-Z]+)?)',                        # Nomes em maiúsculas
         r'(?:nome|Nome)\s+([A-Z][A-Za-z\s]+?)(?:\n|$)',                                    # Padrão mais geral até quebra de linha
         r'Origem[^A-Z]*?(?:nome|Nome)\s+([A-Z][A-Za-z\s]+?)(?:\n|$)',                     # Nome após "Origem"
-        r'([A-Z][a-z]+\s+[A-Z][a-z]+\s+de\s+[A-Z][a-z]+)',                                # Padrão para "Rafael Brasil de Aguiar"
+        r'([A-Z][a-z]+\s+[A-Z][a-z]+\s+de\s+[A-Z][a-z]+)',
     ]
     
     for pattern in name_patterns:
@@ -201,6 +202,7 @@ def extract_name_value_and_date(text):
     
     # Padrões mais flexíveis para extrair valor em reais
     value_patterns = [
+        r'RS\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',        # RS 180,00
         r'R\$\.(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',        # R$.300,00
         r'R\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',        # R$ 30,00 ou R$ 1.000,00
         r'R\$\s*(\d+(?:,\d{2})?)',                        # R$ 30 ou R$ 30,00
@@ -223,6 +225,7 @@ def extract_name_value_and_date(text):
     
     # Padrões para extrair data - incluindo formatos com OCR imperfeito
     date_patterns = [
+        r'(\d{1,2})\s+de\s+(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\s+de\s+(\d{4})',  # "18 de fevereiro de 2025"
         r'(\d{1,2})\s+(fev)\.(\d{4})',                   # "21 fev.2025"
         r'(\d{1,2})/(\d{2})/(\d{2})(?:\s+às|\s+as)',     # "20/02/25 às" ou "20/02/25 as"
         r'(\d{1,2})\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\s+de\s+(\d{4})',  # "21 jul de 2025"
@@ -236,7 +239,10 @@ def extract_name_value_and_date(text):
     month_map = {
         'jan': '01', 'fev': '02', 'mar': '03', 'abr': '04',
         'mai': '05', 'jun': '06', 'jul': '07', 'ago': '08',
-        'set': '09', 'out': '10', 'nov': '11', 'dez': '12'
+        'set': '09', 'out': '10', 'nov': '11', 'dez': '12',
+        'janeiro': '01', 'fevereiro': '02', 'março': '03', 'abril': '04',
+        'maio': '05', 'junho': '06', 'julho': '07', 'agosto': '08',
+        'setembro': '09', 'outubro': '10', 'novembro': '11', 'dezembro': '12'
     }
     
     for i, pattern in enumerate(date_patterns):
