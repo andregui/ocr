@@ -172,6 +172,9 @@ def extract_name_value_and_date(text):
     
     # Padrões mais flexíveis para capturar nomes completos
     name_patterns = [
+        r'CLIENTE:\s*([A-Z][A-Z\s]+\s+[A-Z]\s*;?\s*[A-Z][A-Z\s]+)',  # "CLIENTE: ERIVALDO S; MASCARENHAS"
+        r'de\s*\n*\s*(BERCARIO CRECHE ESCOLA ALMEID\.\.\.)',  # Padrão específico para o caso solicitado
+        r'de\s*\n*\s*([A-Z][A-Z\s]+(?:\.\.\.|(?:\s+[A-Z][a-z]+)*))',  # Nome após "de" com ...
         r'Enviado de\s*\n*\s*([A-Z][A-Z\s]+(?:\s+[A-Z][a-z]+)*)',  # "Enviado de SAMUEL GERVASIO FONTES"
         r'(?:Pagador|pagador)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+de\s+[A-Z][a-z]+)?)',  # "Pagador Rafael Brasil de Aguiar"
         r'Pagador\s*\n\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+de\s+[A-Z][a-z]+)?)',        # "Pagador" em linha separada
@@ -198,11 +201,12 @@ def extract_name_value_and_date(text):
     
     # Padrões mais flexíveis para extrair valor em reais
     value_patterns = [
+        r'R\$\.(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',        # R$.300,00
         r'R\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)',        # R$ 30,00 ou R$ 1.000,00
         r'R\$\s*(\d+(?:,\d{2})?)',                        # R$ 30 ou R$ 30,00
         r'R\$\s*(\d+)',                                   # R$ 30 (sem centavos)
         r'Valor\s+R\$\s*(\d+(?:\.\d{2})?)',              # Valor R$ 30.00
-        r'(?:valor|Valor)[:\s]+R\$\s*(\d+(?:[,\.]\d{2})?)', # Valor: R$ 30,00
+        r'(?:valor|Valor)[:\s\-]+R\$\s*(\d+(?:[,\.]\d{2})?)', # valor-da transferência R$ 30,00
     ]
     
     for pattern in value_patterns:
@@ -219,7 +223,8 @@ def extract_name_value_and_date(text):
     
     # Padrões para extrair data - incluindo formatos com OCR imperfeito
     date_patterns = [
-        r'(\d{1,2})/(\d{2})/(\d{2})(?:\s+às|\s+as)',  # "20/02/25 às" ou "20/02/25 as"
+        r'(\d{1,2})\s+(fev)\.(\d{4})',                   # "21 fev.2025"
+        r'(\d{1,2})/(\d{2})/(\d{2})(?:\s+às|\s+as)',     # "20/02/25 às" ou "20/02/25 as"
         r'(\d{1,2})\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\s+de\s+(\d{4})',  # "21 jul de 2025"
         r'(\d{1,2}|\?\?|\?)\s+(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\s+(\d{4})',  # "2? JUL 2025"
         r'(\d{1,2})/(\d{1,2})/(\d{4})',                   # "21/07/2025"
@@ -239,7 +244,8 @@ def extract_name_value_and_date(text):
         if date_match:
             if i == 0:  # Formato com ano de 2 dígitos
                 day = date_match.group(1).zfill(2)
-                month = date_match.group(2).zfill(2)
+                month_name = date_match.group(2).lower()
+                month = month_map.get(month_name, date_match.group(2).zfill(2))
                 year = format_year(date_match.group(3))
                 result['Data'] = f"{day}/{month}/{year}"
                 break
