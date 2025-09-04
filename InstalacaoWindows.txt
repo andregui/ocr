@@ -1,0 +1,17 @@
+Passo a passo para executar o OCR de comprovantes pix.
+
+1) Baixar e instalar o Python 3.12.10
+
+https://www.python.org/ftp/python/3.12.10/python-3.12.10-amd64.exe
+
+IMPORTANTE: Durante a instalação tenha certeza de marcar a opção "Add Python to environment variables" ou "Add Python to PATH", senão o script não funcionará.
+
+
+Clique em instalar para instalar para todos os usuários
+Na tela de instalação de "Disable Path Length Limit" selecione a opção correspondente.
+
+2) Baixar e instalar o Tesseract
+
+https://github.com/tesseract-ocr/tesseract/releases/download/5.5.0/tesseract-ocr-w64-setup-5.5.0.20241111.exe
+
+Na tela de instalação, na seleção de componentes, selecione "additional language data (download)" e marque "Portuguese" 
