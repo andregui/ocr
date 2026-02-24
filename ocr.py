@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Script para extrair texto de imagens usando OCR e filtrar palavras indesejadas.
-Extrai Nome, Valor e Data de PIX usando regex.
+Extrai Valor e Data de PIX usando regex.
 Versão com processamento de imagem aprimorado.
 """
 
@@ -158,9 +158,9 @@ def extract_text_from_image(image_path):
         print(f"Erro ao extrair texto da imagem: {e}")
         return ""
 
-def extract_name_value_and_date(text):
+def extract_value_and_date(text):
     """
-    Extrai nome, valor e data usando regex.
+    Extrai valor e data usando regex.
     """
     result = {}
     
@@ -170,35 +170,7 @@ def extract_name_value_and_date(text):
             year = '20' + year
         return year
     
-    # Padrões mais flexíveis para capturar nomes completos
-    name_patterns = [
-        r'\nde\n([A-Z][A-Z\s]+(?:\s+[A-Z][A-Z\s]+)*)', 
-        r'CLIENTE:\s*([A-Z][A-Z\s]+\s+[A-Z]\s*;?\s*[A-Z][A-Z\s]+)', 
-        r'de\s*\n*\s*(BERCARIO CRECHE ESCOLA ALMEID\.\.\.)',  # Padrão específico para o caso solicitado
-        r'de\s*\n*\s*([A-Z][A-Z\s]+(?:\.\.\.|(?:\s+[A-Z][a-z]+)*))',  # Nome após "de" com ...
-        r'Enviado de\s*\n*\s*([A-Z][A-Z\s]+(?:\s+[A-Z][a-z]+)*)',
-        r'(?:Pagador|pagador)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+de\s+[A-Z][a-z]+)?)', 
-        r'Pagador\s*\n\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+de\s+[A-Z][a-z]+)?)',        # "Pagador" em linha separada
-        r'(?:nome|Nome)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+da\s+[A-Z][a-z]+)?)',       
-        r'(?:nome|Nome)\s+([A-Z]+\s+[A-Z]+\s+[A-Z]+(?:\s+[A-Z]+)?)',                        # Nomes em maiúsculas
-        r'(?:nome|Nome)\s+([A-Z][A-Za-z\s]+?)(?:\n|$)',                                    # Padrão mais geral até quebra de linha
-        r'Origem[^A-Z]*?(?:nome|Nome)\s+([A-Z][A-Za-z\s]+?)(?:\n|$)',                     # Nome após "Origem"
-        r'([A-Z][a-z]+\s+[A-Z][a-z]+\s+de\s+[A-Z][a-z]+)',
-    ]
     
-    for pattern in name_patterns:
-        name_match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
-        if name_match:
-            name = name_match.group(1).strip()
-            # Remove caracteres estranhos, quebras de linha e palavras indesejadas como CPF
-            name = re.sub(r'\n.*', '', name)  # Remove tudo após quebra de linha
-            name = re.sub(r'\s*(CPF|cnpj|agencia|conta|tipo).*', '', name, flags=re.IGNORECASE)  # Remove CPF e outras palavras
-            name = re.sub(r'[^A-Za-z\s]', '', name).strip()  # Remove caracteres especiais
-            # Verifica se não contém a string indesejada específica e tem tamanho adequado
-            if (not re.search(r'IGREJA BATISTA EM CAVALEIROS|INSTITUI|CPF|PIX|BANCO|TRANSFERENCIA|ITAU|UNIBANCO|CORA|SCF|PAGAMENTOS', name, re.IGNORECASE) 
-                and len(name) > 5 and len(name.split()) >= 2):
-                result['Nome'] = name
-                break
     
     # Padrões mais flexíveis para extrair valor em reais
     value_patterns = [
@@ -303,6 +275,31 @@ def extract_name_value_and_date(text):
     
     return result
 
+def extract_name_from_filename(image_path):
+    """
+    Extrai o nome do arquivo, pegando as palavras após o último '-'.
+    Exemplos:
+    - "Compartilhar comprovante - Sérgio Gabriel Mioti Muniz.png" → "Sérgio Gabriel Mioti Muniz"
+    - "Comprovante - Juliana Nascimento.png" → "Juliana Nascimento"
+    - "Comprovante_20240115T084509564623 - contecomigo 2019.png" → "contecomigo 2019"
+    """
+    # Pega apenas o nome do arquivo sem caminho
+    filename = os.path.basename(image_path)
+    
+    # Remove a extensão
+    name_without_ext = os.path.splitext(filename)[0]
+    
+    # Procura pelo último '-' no nome
+    if '-' in name_without_ext:
+        # Extrai tudo após o último '-'
+        name = name_without_ext.rsplit('-', 1)[-1]
+        # Remove espaços em branco no início e final
+        name = name.strip()
+        return name if name else ""
+    
+    # Se não houver '-', retorna o nome completo sem extensão
+    return name_without_ext.strip()
+
 def save_to_csv(result, image_path, csv_filename="ocr_results.csv"):
     """
     Salva os resultados do OCR em um arquivo CSV.
@@ -310,9 +307,12 @@ def save_to_csv(result, image_path, csv_filename="ocr_results.csv"):
     # Verifica se o arquivo CSV já existe
     file_exists = os.path.exists(csv_filename)
     
+    # Extrai o nome do arquivo
+    nome = extract_name_from_filename(image_path)
+    
     # Prepara os dados para salvar
     row_data = {
-        'Nome': result.get('Nome', ''),
+        'Nome': nome,
         'Valor': result.get('Valor', ''),
         'Data': result.get('Data', ''),
         'Arquivo_Imagem': os.path.basename(image_path),
@@ -342,7 +342,7 @@ def main():
         print("\nExemplos:")
         print("  python ocr_script_final.py pix4.jpg")
         print("  python ocr_script_final.py imagem.png")
-        print("\nO script extrai Nome, Valor e Data de comprovantes PIX")
+        print("\nO script extrai Valor e Data de comprovantes PIX")
         print("e salva os resultados no arquivo 'ocr_results.csv'")
         sys.exit(1)
     
@@ -357,11 +357,9 @@ def main():
         print("  python ocr_script_final.py pix4.jpg")
         print("  python ocr_script_final.py imagem.png")
         print("\nO script extrai:")
-        print("  - Nome do pagador")
         print("  - Valor da transação")
         print("  - Data da transação")
         print("\nOs resultados são salvos no arquivo 'ocr_results.csv'")
-        print("Filtra automaticamente nomes indesejados como 'CHARLES DA CONCEICAO'")
         sys.exit(0)
     
     if not os.path.exists(image_path):
@@ -383,13 +381,15 @@ def main():
     print(text)
     print("-" * 50)
     
-    # Extrai nome, valor e data
-    result = extract_name_value_and_date(text)
+    # Extrai valor e data
+    result = extract_value_and_date(text)
     
-    if result:
+    # Extrai nome do arquivo
+    nome = extract_name_from_filename(image_path)
+    
+    if result or nome:
         # Imprime na ordem específica: Nome, Valor, Data
-        if 'Nome' in result:
-            print(f"Nome: {result['Nome']}")
+        print(f"Nome: {nome}")
         if 'Valor' in result:
             print(f"Valor: {result['Valor']}")
         if 'Data' in result:
@@ -398,7 +398,7 @@ def main():
         # Salva os resultados no arquivo CSV
         save_to_csv(result, image_path)
     else:
-        print("Não foi possível extrair nome, valor ou data da imagem.")
+        print("Não foi possível extrair informações da imagem.")
         print("\nTexto extraído para debug:")
         print("-" * 50)
         print(text[:500] + "..." if len(text) > 500 else text)
