@@ -171,11 +171,12 @@ def save_to_csv(result, image_path, csv_filename="ocr_results.csv"):
         'Valor': result.get('Valor', ''),
         'Data': result.get('Data', ''),
         'Arquivo_Imagem': os.path.basename(image_path),
+        'Arquivo_Imagem_Caminho': os.path.abspath(image_path),
         'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
     
     with open(csv_filename, 'a', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['Nome', 'Valor', 'Data', 'Arquivo_Imagem', 'Timestamp']
+        fieldnames = ['Nome', 'Valor', 'Data', 'Arquivo_Imagem', 'Arquivo_Imagem_Caminho', 'Timestamp']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         
         if not file_exists:

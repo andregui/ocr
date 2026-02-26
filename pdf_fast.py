@@ -77,10 +77,11 @@ def save_to_csv(result, pdf_path, csv_filename="ocr_results_pdf.csv"):
         'Valor': result.get('Valor', ''),
         'Data': result.get('Data', ''),
         'Arquivo': os.path.basename(pdf_path),
+        'Arquivo_Caminho': os.path.abspath(pdf_path),
         'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
     with open(csv_filename, 'a', newline='', encoding='utf-8') as f:
-        fieldnames = ['Nome', 'Valor', 'Data', 'Arquivo', 'Timestamp']
+        fieldnames = ['Nome', 'Valor', 'Data', 'Arquivo', 'Arquivo_Caminho', 'Timestamp']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         if not file_exists:
             writer.writeheader()
